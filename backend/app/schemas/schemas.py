@@ -21,9 +21,14 @@ class UserResponse(BaseModel):
     created_at: datetime
     role: Optional[str] = None
     organization_id: Optional[int] = None
+    must_change_password: Optional[bool] = False
 
     class Config:
         from_attributes = True
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
 
 class Token(BaseModel):
     access_token: str

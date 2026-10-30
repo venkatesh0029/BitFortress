@@ -89,7 +89,8 @@ def login(login_in: UserLogin, db: Session = Depends(get_db)):
         status=user.status,
         created_at=user.created_at,
         role=role,
-        organization_id=org_id
+        organization_id=org_id,
+        must_change_password=getattr(user, "must_change_password", False)
     )
 
     return Token(access_token=access_token, user=user_resp)
@@ -107,8 +108,31 @@ def get_me(current_user: User = Depends(get_current_user), db: Session = Depends
         status=current_user.status,
         created_at=current_user.created_at,
         role=role,
-        organization_id=org_id
+        organization_id=org_id,
+        must_change_password=getattr(current_user, "must_change_password", False)
     )
+
+@router.post("/change-password")
+def change_password(
+    req: PasswordChangeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Allows authenticated users to change their password, clearing default credential flags."""
+    if not verify_password(req.current_password, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="Current password incorrect")
+
+    if len(req.new_password) < 8:
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters long")
+
+    if req.new_password == "password123":
+        raise HTTPException(status_code=400, detail="Cannot choose default demonstration password")
+
+    current_user.password_hash = get_password_hash(req.new_password)
+    current_user.must_change_password = False
+    db.commit()
+
+    return {"status": "success", "message": "Password changed successfully"}
 
 @router.get("/demo-users")
 def get_demo_users(db: Session = Depends(get_db)):
@@ -126,6 +150,7 @@ def get_demo_users(db: Session = Depends(get_db)):
             "role": role,
             "has_signer_key": signer is not None,
             "signer_label": signer.label if signer else None,
-            "public_key": signer.public_key if signer else None
+            "public_key": signer.public_key if signer else None,
+            "must_change_password": getattr(u, "must_change_password", False)
         })
     return demo_list

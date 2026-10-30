@@ -27,8 +27,35 @@ class Settings(BaseSettings):
     # Regtest block explorer / mock network options
     NETWORK: str = "regtest"
 
+    # Environment mode: "development" | "production" | "testing"
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+
+    def validate_production_configuration(self):
+        """
+        Enforces strict security constraints when running in production:
+        Rejects insecure fallback secrets and default development credentials.
+        """
+        if self.ENVIRONMENT.lower() == "production":
+            insecure_secret_patterns = [
+                "satoshiguard_ultra_secure_jwt",
+                "default",
+                "secret",
+                "password",
+                "changeme",
+                "bitfortress"
+            ]
+            if any(p in self.SECRET_KEY.lower() for p in insecure_secret_patterns) or len(self.SECRET_KEY) < 32:
+                raise ValueError(
+                    "FATAL SECURITY VIOLATION: Production mode requires a strong, random SECRET_KEY (min 32 chars) supplied via environment variable."
+                )
+            if self.BITCOIN_RPC_PASSWORD in ["guardvaultpassword123", "password", "123456", "admin"]:
+                raise ValueError(
+                    "FATAL SECURITY VIOLATION: Production mode requires a secure non-default BITCOIN_RPC_PASSWORD."
+                )
+
     class Config:
         env_file = ".env"
         extra = "allow"
 
 settings = Settings()
+settings.validate_production_configuration()

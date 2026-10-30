@@ -50,6 +50,7 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     full_name = Column(String(255), nullable=False)
     password_hash = Column(String(255), nullable=False)
+    must_change_password = Column(Boolean, default=False)
     status = Column(String(50), default="ACTIVE")
     created_at = Column(DateTime(timezone=True), default=utc_now)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)

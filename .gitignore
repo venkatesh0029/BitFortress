@@ -21,3 +21,4 @@ bitcoin_bin/
 bitcoin_data/
 *.zip
 *.tar.gz
+*.jsonl

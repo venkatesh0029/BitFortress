@@ -6,11 +6,14 @@ logger = logging.getLogger("bitfortress.signer.device")
 
 class SignerDeviceService:
     """
-    Manages isolated custodian signing devices (HSMs / Hardware Wallets).
-    In Bitcoin Regtest development, each custodian's private key is stored exclusively
-    in an isolated, dedicated Bitcoin Core wallet (sg_custodian_{signer_id}) that represents
-    an independent hardware signing device. The treasury coordinator/server never accesses
+    Simulated Custodian Signing Device Service (for automated Regtest demonstration).
+    Each custodian's private key is segregated into a dedicated node wallet (sg_custodian_{signer_id}),
+    representing an independent signing device. The BitFortress coordinator never accesses
     these private keys directly and strictly consumes BIP-174 signed PSBTs.
+
+    For production air-gapped custody or independent offline signing, signers operate
+    an independent hardware device (Ledger, Trezor, Coldcard) or use the standalone offline
+    signer CLI tool located at `tools/signer_cli.py`.
     """
 
     def get_custodian_wallet_name(self, signer_id: int) -> str:

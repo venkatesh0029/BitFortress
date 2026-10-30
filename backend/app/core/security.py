@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 import jwt
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
@@ -73,23 +73,47 @@ def get_current_user(payload: dict = Depends(get_current_user_payload), db: Sess
         )
     return user
 
+def get_current_org_membership(
+    x_org_id: Optional[str] = Header(None, alias="X-Organization-Id"),
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Resolves the caller's active organization membership.
+    If X-Organization-Id header is provided, validates that the user is an active member
+    of that specific organization, preventing cross-tenant authorization bleed.
+    """
+    from app.models.models import OrganizationMember
+    query = db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id)
+    if x_org_id:
+        try:
+            target_org_id = int(x_org_id)
+            mem = query.filter(OrganizationMember.organization_id == target_org_id).first()
+            if not mem:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"User is not a member of organization ID {target_org_id}"
+                )
+            return mem
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid X-Organization-Id header format")
+
+    mem = query.first()
+    if not mem:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not belong to any organization"
+        )
+    return mem
+
 def require_role(allowed_roles: List[str]):
     def role_checker(
-        current_user = Depends(get_current_user),
-        db: Session = Depends(get_db)
+        membership = Depends(get_current_org_membership)
     ):
-        from app.models.models import OrganizationMember
-        # Check user's role across organizations or primary membership
-        member = db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
-        if not member:
+        if membership.role not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="User does not belong to any organization",
+                detail=f"Action requires one of the following roles: {', '.join(allowed_roles)}. Your role is: {membership.role}",
             )
-        if member.role not in allowed_roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Action requires one of the following roles: {', '.join(allowed_roles)}. Your role is: {member.role}",
-            )
-        return member
+        return membership
     return role_checker

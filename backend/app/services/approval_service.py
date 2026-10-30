@@ -86,12 +86,28 @@ class ApprovalService:
             )
 
         # 5. Cryptographically verify and combine PSBT
-        # Validates that the submitted PSBT contains a partial signature for signer_profile.public_key
-        combine_result = psbt_service.combine_and_verify_signatures(
-            current_psbt=psbt_record.current_psbt,
-            submitted_signed_psbt=signed_psbt.strip(),
-            expected_pubkey_hex=signer_profile.public_key
-        )
+        # Validates that the submitted PSBT contains an authentic ECDSA DER signature matching signer_profile.public_key and sighash
+        try:
+            combine_result = psbt_service.combine_and_verify_signatures(
+                current_psbt=psbt_record.current_psbt,
+                submitted_signed_psbt=signed_psbt.strip(),
+                expected_pubkey_hex=signer_profile.public_key
+            )
+        except ValueError as e:
+            audit_service.record_event(
+                db=db,
+                organization_id=wallet.organization_id,
+                event_type="APPROVAL_SIGNATURE_REJECTED",
+                actor_id=user_id,
+                reference_type="TRANSACTION_PROPOSAL",
+                reference_id=str(proposal_id),
+                details={
+                    "reason": str(e),
+                    "signer_id": signer_profile.id,
+                    "public_key": signer_profile.public_key
+                }
+            )
+            raise
         updated_psbt = combine_result["combined_psbt"]
         psbt_record.current_psbt = updated_psbt
 
