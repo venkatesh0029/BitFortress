@@ -193,13 +193,13 @@ export default function SettingsPage() {
         <div className="grid md:grid-cols-3 gap-4 text-xs font-mono">
           <div className="p-4 rounded-xl bg-slate-950/80 border border-cyan-900/40 space-y-1">
             <span className="text-slate-500 font-sans font-medium text-[11px]">Enterprise Name</span>
-            <div className="font-bold text-white text-sm font-sans">SatoshiGuard Capital & Treasury</div>
+            <div className="font-bold text-white text-sm font-sans">BitFortress Capital & Treasury</div>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-950/80 border border-cyan-900/40 space-y-1">
             <span className="text-slate-500 font-sans font-medium text-[11px]">Active Custodian</span>
             <div className="font-bold text-white text-sm font-sans">{user?.full_name || 'Sarah Lin'}</div>
-            <div className="text-[10px] text-cyan-400/80">{user?.email || 'admin@satoshiguard.io'}</div>
+            <div className="text-[10px] text-cyan-400/80">{user?.email || 'admin@bitfortress.io'}</div>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-950/80 border border-cyan-900/40 space-y-1">

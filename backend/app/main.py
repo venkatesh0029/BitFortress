@@ -20,7 +20,7 @@ from app.bitcoin.wallet_service import wallet_service
 from app.services.signer_device_service import signer_device_service
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-logger = logging.getLogger("satoshiguard.main")
+logger = logging.getLogger("bitfortress.main")
 
 def seed_initial_demo_data():
     """Seeds rich corporate demo data for immediate testing and demonstration."""
@@ -33,7 +33,7 @@ def seed_initial_demo_data():
         logger.info("Seeding initial corporate treasury demonstration environment...")
 
         # 1. Organization
-        org = Organization(name="SatoshiGuard Capital & Treasury", status="ACTIVE")
+        org = Organization(name="BitFortress Capital & Treasury", status="ACTIVE")
         db.add(org)
         db.flush()
 
@@ -159,7 +159,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="SatoshiGuard: Bitcoin-Based Multisignature Corporate Treasury Management System",
+    description="BitFortress: Bitcoin-Based Multisignature Corporate Treasury Management System",
     lifespan=lifespan
 )
 
@@ -187,7 +187,7 @@ app.include_router(node.router, prefix=settings.API_V1_PREFIX)
 @app.get("/")
 def root():
     return {
-        "service": "SatoshiGuard API",
+        "service": "BitFortress API",
         "status": "OPERATIONAL",
         "version": settings.VERSION,
         "docs": "/docs"

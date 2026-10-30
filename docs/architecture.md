@@ -1,10 +1,10 @@
-# SatoshiGuard Architecture & Technical Specification
+# BitFortress Architecture & Technical Specification
 
 ## 1. System Overview
-**SatoshiGuard** is an institutional-grade, Bitcoin-native multisignature treasury management platform. It eliminates single-point-of-failure key risk by enforcing strict threshold policies (e.g., 2-of-3, 3-of-5) before any Bitcoin transaction can be finalized and broadcast.
+**BitFortress** is an institutional-grade, Bitcoin-native multisignature treasury management platform. It eliminates single-point-of-failure key risk by enforcing strict threshold policies (e.g., 2-of-3, 3-of-5) before any Bitcoin transaction can be finalized and broadcast.
 
 ```
-                          SatoshiGuard Architecture
+                           BitFortress Architecture
                                      |
                +---------------------+---------------------+
                |                                           |
@@ -33,7 +33,7 @@ PostgreSQL 18              Bitcoin Core v28 (Regtest)
 ```
 
 ## 2. Cryptographic Custody & BIP-174 Signing Flow
-SatoshiGuard implements an air-gapped / isolated custodian architecture:
+BitFortress implements an air-gapped / isolated custodian architecture:
 1. **Zero Server Private Key Knowledge**: The coordinator backend and PostgreSQL database store strictly secp256k1 public keys and wallet descriptors. Private keys never cross coordinator boundaries.
 2. **Device Signer Isolation**: Signers operate independent signing devices (represented by isolated custodian wallets `sg_custodian_{signer_id}`). Each custodian signs the original unsigned PSBT independently.
 3. **Mandatory Signature Extraction**: An approval is rejected unless the submitted PSBT contains a valid ECDSA partial signature cryptographically verified against the signer's registered public key.

@@ -1,6 +1,6 @@
-# SatoshiGuard: Bitcoin-Based Multisignature Corporate Treasury Management System
+# BitFortress: Bitcoin-Based Multisignature Corporate Treasury Management System
 
-**SatoshiGuard** is an institutional-grade, Bitcoin-native corporate treasury management platform. It uses Bitcoin multisignature wallets (Native SegWit P2WSH) and Partially Signed Bitcoin Transactions (BIP-174 PSBT) to mandate multi-custodian quorum authorization before corporate funds can be disbursed.
+**BitFortress** is an institutional-grade, Bitcoin-native corporate treasury management platform. It uses Bitcoin multisignature wallets (Native SegWit P2WSH) and Partially Signed Bitcoin Transactions (BIP-174 PSBT) to mandate multi-custodian quorum authorization before corporate funds can be disbursed.
 
 Designed without Docker requirements, all components run natively on the development machine.
 
@@ -9,7 +9,7 @@ Designed without Docker requirements, all components run natively on the develop
 ## 1. System Architecture
 
 ```
-                                  SatoshiGuard
+                                   BitFortress
                                         |
                  +----------------------+----------------------+
                  |                                             |
@@ -58,7 +58,7 @@ Database Persistence - Native PSBT creation & combination
 
 ## 3. Pre-Seeded Demonstration Personas
 
-SatoshiGuard comes pre-seeded with 6 corporate personas for instant 1-click testing:
+BitFortress comes pre-seeded with 6 corporate personas for instant 1-click testing:
 
 | Persona | Role | Default Password | Key Custody |
 |---|---|---|---|

@@ -1,4 +1,4 @@
-# SatoshiGuard Security Controls & Threat Model
+# BitFortress Security Controls & Threat Model
 
 ## 1. Key Custody & Signer Device Isolation
 - **Zero Plaintext Private Keys in Application Database**: PostgreSQL never stores private keys. Signers maintain independent custody of their own signing material.

@@ -11,7 +11,7 @@ from app.services.treasury_service import treasury_service
 from app.services.audit_service import audit_service
 from app.services.notification_service import notification_service
 
-logger = logging.getLogger("satoshiguard.approval.service")
+logger = logging.getLogger("bitfortress.approval.service")
 
 class ApprovalService:
     @staticmethod

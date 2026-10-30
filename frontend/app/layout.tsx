@@ -6,7 +6,7 @@ import { AuthProvider } from '@/components/RoleContext';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SatoshiGuard | Bitcoin Corporate Multisig Treasury Platform',
+  title: 'BitFortress | Bitcoin Corporate Multisig Treasury Platform',
   description: 'Enterprise Bitcoin multisignature treasury system with PSBT workflow, threshold policies, and cryptographic verification.',
 };
 

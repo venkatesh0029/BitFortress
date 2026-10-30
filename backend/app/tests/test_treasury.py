@@ -12,12 +12,12 @@ def test_password_hashing():
     assert verify_password("WrongPass", h) is False
 
 def test_jwt_token_creation_and_decoding():
-    payload = {"sub": "42", "email": "officer@satoshiguard.io", "role": "SIGNER"}
+    payload = {"sub": "42", "email": "officer@bitfortress.io", "role": "SIGNER"}
     token = create_access_token(payload)
     decoded = decode_access_token(token)
     assert decoded is not None
     assert decoded["sub"] == "42"
-    assert decoded["email"] == "officer@satoshiguard.io"
+    assert decoded["email"] == "officer@bitfortress.io"
     assert decoded["role"] == "SIGNER"
 
 def test_secp256k1_key_generation_and_signatures():

@@ -2,7 +2,7 @@ import logging
 from typing import Dict, Any, Optional
 from app.bitcoin.rpc_client import BitcoinRPCClient, bitcoin_rpc, BitcoinRPCException
 
-logger = logging.getLogger("satoshiguard.signer.device")
+logger = logging.getLogger("bitfortress.signer.device")
 
 class SignerDeviceService:
     """

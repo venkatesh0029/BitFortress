@@ -53,7 +53,7 @@ export default function Navbar() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-lg font-extrabold tracking-tight text-white">
-                  Satoshi<span className="text-[#00F0FF] drop-shadow-[0_0_12px_rgba(0,240,255,0.6)]">Guard</span>
+                  Bit<span className="text-[#00F0FF] drop-shadow-[0_0_12px_rgba(0,240,255,0.6)]">Fortress</span>
                 </span>
                 <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full neon-badge-cyan">
                   NEON VAULT

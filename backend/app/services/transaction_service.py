@@ -11,7 +11,7 @@ from app.services.policy_service import policy_service
 from app.services.audit_service import audit_service
 from app.services.notification_service import notification_service
 
-logger = logging.getLogger("satoshiguard.transaction.service")
+logger = logging.getLogger("bitfortress.transaction.service")
 
 class TransactionService:
     @staticmethod

@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 from app.core.config import settings
 
-logger = logging.getLogger("satoshiguard.bitcoin.rpc")
+logger = logging.getLogger("bitfortress.bitcoin.rpc")
 
 class BitcoinRPCException(Exception):
     def __init__(self, code: int, message: str):
@@ -38,7 +38,7 @@ class BitcoinRPCClient:
             params = []
         payload = {
             "jsonrpc": "2.0",
-            "id": "satoshiguard",
+            "id": "bitfortress",
             "method": method,
             "params": params
         }

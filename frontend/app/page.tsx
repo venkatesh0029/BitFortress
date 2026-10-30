@@ -21,7 +21,7 @@ export default function LandingPage() {
             </div>
             <div>
               <span className="text-xl font-black tracking-tight text-white">
-                Satoshi<span className="text-[#00F0FF] drop-shadow-[0_0_12px_rgba(0,240,255,0.6)]">Guard</span>
+                Bit<span className="text-[#00F0FF] drop-shadow-[0_0_12px_rgba(0,240,255,0.6)]">Fortress</span>
               </span>
               <span className="ml-2 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full neon-badge-cyan">
                 NEON PROTOCOL
@@ -129,7 +129,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="mt-auto py-8 border-t border-[#00F0FF]/15 text-center text-xs text-slate-500 font-mono">
-        <p>SatoshiGuard • Professional Bitcoin Multi-Sig Protocol • Next.js & FastAPI on Bitcoin Core Regtest</p>
+        <p>BitFortress • Professional Bitcoin Multi-Sig Protocol • Next.js & FastAPI on Bitcoin Core Regtest</p>
       </footer>
     </div>
   );

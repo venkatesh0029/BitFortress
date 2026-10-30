@@ -5,7 +5,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from app.bitcoin.rpc_client import bitcoin_rpc, BitcoinRPCException
 from app.bitcoin.wallet_service import wallet_service
 
-logger = logging.getLogger("satoshiguard.bitcoin.psbt")
+logger = logging.getLogger("bitfortress.bitcoin.psbt")
 
 # SegWit standard dust limit in satoshis
 DUST_LIMIT_SATOSHIS = 546

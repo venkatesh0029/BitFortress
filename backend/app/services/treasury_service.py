@@ -7,7 +7,7 @@ from app.models.models import (
 from app.bitcoin.wallet_service import wallet_service
 from app.services.audit_service import audit_service
 
-logger = logging.getLogger("satoshiguard.treasury.service")
+logger = logging.getLogger("bitfortress.treasury.service")
 
 class TreasuryService:
     @staticmethod

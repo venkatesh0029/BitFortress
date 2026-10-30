@@ -2,7 +2,7 @@ import logging
 from typing import Dict, Any, List, Tuple
 from app.bitcoin.rpc_client import BitcoinRPCClient, bitcoin_rpc, BitcoinRPCException
 
-logger = logging.getLogger("satoshiguard.bitcoin.wallet")
+logger = logging.getLogger("bitfortress.bitcoin.wallet")
 
 MINER_WALLET_NAME = "sg_miner_funder"
 

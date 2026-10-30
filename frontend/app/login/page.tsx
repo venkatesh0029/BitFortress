@@ -64,7 +64,7 @@ export default function LoginPage() {
           </div>
         </div>
         <h1 className="text-3xl font-black text-white tracking-tight">
-          Satoshi<span className="text-[#00F0FF] drop-shadow-[0_0_12px_rgba(0,240,255,0.6)]">Guard</span>
+          Bit<span className="text-[#00F0FF] drop-shadow-[0_0_12px_rgba(0,240,255,0.6)]">Fortress</span>
         </h1>
         <p className="text-xs text-slate-400 font-mono">INSTITUTIONAL MULTISIG AUTHORIZATION PROTOCOL</p>
       </div>
@@ -191,7 +191,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="admin@satoshiguard.io"
+                  placeholder="admin@bitfortress.io"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-[#030712] border border-slate-800 text-white text-xs focus:outline-none focus:border-[#00F0FF] focus:shadow-[0_0_15px_rgba(0,240,255,0.3)] transition"
                 />
               </div>

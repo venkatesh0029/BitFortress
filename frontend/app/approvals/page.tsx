@@ -92,7 +92,7 @@ function ApprovalsContent() {
       // 2. Request isolated custodian hardware device / HSM to sign the PSBT
       const deviceSignResult = await api.deviceSignPSBT(mySignerProfile.id, selectedProposal.current_psbt);
 
-      // 3. Submit the cryptographically signed PSBT to the SatoshiGuard approval coordinator
+      // 3. Submit the cryptographically signed PSBT to the BitFortress approval coordinator
       const res = await api.signProposal(
         selectedProposal.id,
         deviceSignResult.signed_psbt,

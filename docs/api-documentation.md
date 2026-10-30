@@ -1,4 +1,4 @@
-# SatoshiGuard REST API Reference
+# BitFortress REST API Reference
 
 Base URL: `http://localhost:8000/api`
 
