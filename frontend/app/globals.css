@@ -1,0 +1,178 @@
+@import "tailwindcss";
+
+:root {
+  --background: #030712;
+  --foreground: #F1F5F9;
+  --card: #070C1B;
+  --card-border: #132238;
+  --neon-cyan: #00F0FF;
+  --neon-cyan-glow: rgba(0, 240, 255, 0.4);
+  --neon-emerald: #00FF9D;
+  --neon-emerald-glow: rgba(0, 255, 157, 0.4);
+  --neon-purple: #A855F7;
+  --neon-purple-glow: rgba(168, 85, 247, 0.4);
+  --neon-amber: #FFB800;
+  --neon-rose: #FF1E56;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-feature-settings: "rlig" 1, "calt" 1, "tnum" 1;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 100% 50%, rgba(168, 85, 247, 0.05) 0%, transparent 35%),
+    linear-gradient(to right, rgba(0, 240, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 240, 255, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+}
+
+/* Neon Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #030712;
+}
+::-webkit-scrollbar-thumb {
+  background: #112238;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00F0FF;
+  box-shadow: 0 0 10px #00F0FF;
+}
+
+/* Professional Neon Card & Panel Styling */
+.neon-card {
+  background: rgba(7, 12, 27, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 240, 255, 0.18);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(0, 240, 255, 0.15);
+  transition: all 0.25s ease;
+}
+
+.neon-card:hover {
+  border-color: rgba(0, 240, 255, 0.4);
+  box-shadow: 0 10px 35px -5px rgba(0, 240, 255, 0.15), inset 0 1px 0 0 rgba(0, 240, 255, 0.3);
+}
+
+.neon-card-purple {
+  background: rgba(8, 10, 28, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(168, 85, 247, 0.2);
+}
+
+.neon-card-purple:hover {
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 10px 35px -5px rgba(168, 85, 247, 0.25);
+}
+
+.neon-card-emerald {
+  background: rgba(5, 16, 20, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 255, 157, 0.25);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(0, 255, 157, 0.2);
+}
+
+.neon-card-emerald:hover {
+  border-color: rgba(0, 255, 157, 0.5);
+  box-shadow: 0 10px 35px -5px rgba(0, 255, 157, 0.25);
+}
+
+/* Neon Text Glows */
+.neon-glow-text-cyan {
+  color: #00F0FF;
+  text-shadow: 0 0 12px rgba(0, 240, 255, 0.55), 0 0 25px rgba(0, 240, 255, 0.25);
+}
+
+.neon-glow-text-emerald {
+  color: #00FF9D;
+  text-shadow: 0 0 12px rgba(0, 255, 157, 0.55), 0 0 25px rgba(0, 255, 157, 0.25);
+}
+
+.neon-glow-text-purple {
+  color: #C084FC;
+  text-shadow: 0 0 12px rgba(192, 132, 252, 0.55), 0 0 25px rgba(192, 132, 252, 0.25);
+}
+
+.neon-glow-text-amber {
+  color: #FFB800;
+  text-shadow: 0 0 12px rgba(255, 184, 0, 0.55);
+}
+
+/* Neon Glow Badges & Buttons */
+.neon-btn-primary {
+  background: linear-gradient(135deg, #00F0FF 0%, #0284C7 100%);
+  color: #030712;
+  font-weight: 700;
+  border: 1px solid #00F0FF;
+  box-shadow: 0 0 20px -2px rgba(0, 240, 255, 0.5);
+  transition: all 0.2s ease;
+}
+
+.neon-btn-primary:hover {
+  background: linear-gradient(135deg, #38BDF8 0%, #00F0FF 100%);
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.7);
+  transform: translateY(-1px);
+}
+
+.neon-btn-emerald {
+  background: linear-gradient(135deg, #00FF9D 0%, #059669 100%);
+  color: #030712;
+  font-weight: 700;
+  border: 1px solid #00FF9D;
+  box-shadow: 0 0 20px -2px rgba(0, 255, 157, 0.5);
+  transition: all 0.2s ease;
+}
+
+.neon-btn-emerald:hover {
+  box-shadow: 0 0 30px rgba(0, 255, 157, 0.7);
+  transform: translateY(-1px);
+}
+
+.neon-badge-cyan {
+  background: rgba(0, 240, 255, 0.1);
+  color: #00F0FF;
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  box-shadow: 0 0 10px -2px rgba(0, 240, 255, 0.3);
+}
+
+.neon-badge-emerald {
+  background: rgba(0, 255, 157, 0.1);
+  color: #00FF9D;
+  border: 1px solid rgba(0, 255, 157, 0.35);
+  box-shadow: 0 0 10px -2px rgba(0, 255, 157, 0.3);
+}
+
+.neon-badge-purple {
+  background: rgba(168, 85, 247, 0.1);
+  color: #C084FC;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  box-shadow: 0 0 10px -2px rgba(168, 85, 247, 0.3);
+}
+
+.neon-badge-amber {
+  background: rgba(255, 184, 0, 0.1);
+  color: #FFB800;
+  border: 1px solid rgba(255, 184, 0, 0.35);
+  box-shadow: 0 0 10px -2px rgba(255, 184, 0, 0.3);
+}
+
+.neon-badge-rose {
+  background: rgba(255, 30, 86, 0.1);
+  color: #FF1E56;
+  border: 1px solid rgba(255, 30, 86, 0.35);
+  box-shadow: 0 0 10px -2px rgba(255, 30, 86, 0.3);
+}
+
+/* Tabular Monospace Font */
+.font-mono-numbers {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-variant-numeric: tabular-nums;
+}

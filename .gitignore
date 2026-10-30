@@ -1,0 +1,23 @@
+# Environments & Secrets
+.env
+.env.local
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+backend/venv/
+.pytest_cache/
+
+# Node & Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Database & Local blockchain node data
+local_pgdata/
+bitcoin_bin/
+bitcoin_data/
+*.zip
+*.tar.gz
