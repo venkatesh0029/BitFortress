@@ -74,27 +74,25 @@ def test_duplicate_signature_and_rejection_logic():
         from app.models.models import Approval, SignerProfile, TreasurySigner, ApprovalDecision
         from app.services.approval_service import approval_service
 
-        # Find existing proposal or create one
-        proposal = db.query(TransactionProposal).filter(TransactionProposal.status == ProposalStatus.PENDING).first()
-        if not proposal:
-            wallet = db.query(TreasuryWallet).first()
-            user = db.query(User).first()
-            proposal = TransactionProposal(
-                wallet_id=wallet.id,
-                proposer_id=user.id,
-                destination="bcrt1qtestdest998877",
-                amount=1000000,
-                fee_satoshis=1000,
-                description="Test payment",
-                status=ProposalStatus.PENDING
-            )
-            db.add(proposal)
-            db.commit()
-            db.refresh(proposal)
-
-        # Get signer 1 user
+        # Get signer 1 user and their authorized treasury wallet
         signer1_user = db.query(User).filter(User.email == "signer1@satoshiguard.io").first()
-        
+        sp = db.query(SignerProfile).filter(SignerProfile.user_id == signer1_user.id).first()
+        ts = db.query(TreasurySigner).filter(TreasurySigner.signer_id == sp.id).first()
+        wallet = db.query(TreasuryWallet).filter(TreasuryWallet.id == ts.wallet_id).first()
+
+        proposal = TransactionProposal(
+            wallet_id=wallet.id,
+            proposer_id=signer1_user.id,
+            destination="bcrt1qtestdest998877",
+            amount=1000000,
+            fee_satoshis=1000,
+            description="Test payment for rejection",
+            status=ProposalStatus.PENDING
+        )
+        db.add(proposal)
+        db.commit()
+        db.refresh(proposal)
+
         # Test rejection flow
         res = approval_service.reject_proposal(
             db=db,
@@ -118,7 +116,8 @@ def test_duplicate_signature_and_rejection_logic():
             approval_service.approve_proposal(
                 db=db,
                 proposal_id=proposal.id,
-                user_id=signer1_user.id
+                user_id=signer1_user.id,
+                signed_psbt="cHNidP8BAHICAAAA..."
             )
 
     finally:

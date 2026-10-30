@@ -20,12 +20,15 @@ export default function SecurityPage() {
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(null);
+  const [chainVerification, setChainVerification] = useState<any>(null);
+  const [isVerifyingChain, setIsVerifyingChain] = useState<boolean>(false);
 
   const loadSecurityData = async () => {
     try {
-      const [p, events] = await Promise.all([
+      const [p, events, verification] = await Promise.all([
         api.getPolicy().catch(() => null),
-        api.getAuditTrail(undefined, 50)
+        api.getAuditTrail(undefined, 50),
+        api.verifyAuditTrail().catch(() => null)
       ]);
       if (p) {
         setPolicy(p);
@@ -34,6 +37,7 @@ export default function SecurityPage() {
         setRequireAdmin(p.require_admin_override);
       }
       setAuditEvents(events);
+      if (verification) setChainVerification(verification);
     } catch (e) {
       console.error(e);
     }
@@ -42,6 +46,18 @@ export default function SecurityPage() {
   useEffect(() => {
     loadSecurityData();
   }, []);
+
+  const handleVerifyChain = async () => {
+    setIsVerifyingChain(true);
+    try {
+      const res = await api.verifyAuditTrail();
+      setChainVerification(res);
+    } catch (e: any) {
+      alert(e.message || 'Verification failed');
+    } finally {
+      setIsVerifyingChain(false);
+    }
+  };
 
   const handleUpdatePolicy = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,14 +97,56 @@ export default function SecurityPage() {
           </p>
         </div>
 
-        <button
-          onClick={loadSecurityData}
-          className="px-4 py-2 rounded-xl bg-slate-900/90 border border-cyan-900/60 text-xs text-cyan-300 hover:text-white hover:border-cyan-400 flex items-center gap-2 transition hover:shadow-[0_0_15px_rgba(0,240,255,0.2)] font-mono font-bold"
-        >
-          <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
-          Refresh Audit Trail
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleVerifyChain}
+            disabled={isVerifyingChain}
+            className="px-4 py-2 rounded-xl bg-purple-950/60 border border-purple-500/40 text-xs text-purple-300 hover:text-white hover:border-purple-400 flex items-center gap-2 transition hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] font-mono font-bold"
+          >
+            {isVerifyingChain ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />}
+            Verify SHA-256 Hash Chain
+          </button>
+
+          <button
+            onClick={loadSecurityData}
+            className="px-4 py-2 rounded-xl bg-slate-900/90 border border-cyan-900/60 text-xs text-cyan-300 hover:text-white hover:border-cyan-400 flex items-center gap-2 transition hover:shadow-[0_0_15px_rgba(0,240,255,0.2)] font-mono font-bold"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+            Refresh
+          </button>
+        </div>
       </div>
+
+      {chainVerification && (
+        <div className={`p-4 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+          chainVerification.is_valid
+            ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300 shadow-[0_0_20px_rgba(0,255,157,0.1)]'
+            : 'bg-rose-950/30 border-rose-500/40 text-rose-300 shadow-[0_0_20px_rgba(255,30,86,0.1)]'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            {chainVerification.is_valid ? (
+              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+            ) : (
+              <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+            )}
+            <div>
+              <div className="font-bold flex items-center gap-2">
+                <span>Cryptographic Audit Trail Integrity:</span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase ${
+                  chainVerification.is_valid ? 'neon-badge-emerald' : 'neon-badge-rose'
+                }`}>
+                  {chainVerification.is_valid ? '100% Intact / Verified' : 'Integrity Compromised'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">{chainVerification.message}</p>
+            </div>
+          </div>
+          <div className="font-mono text-[10px] text-right text-slate-400 bg-slate-950/60 p-2 rounded-lg border border-cyan-900/30">
+            <div>Records Verified: {chainVerification.total_records}</div>
+            <div className="text-cyan-400 truncate max-w-xs">Tip: {chainVerification.latest_hash?.slice(0, 20)}...</div>
+          </div>
+        </div>
+      )}
 
       {updateSuccess && (
         <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-xs text-emerald-300 flex items-center gap-2.5 shadow-[0_0_20px_rgba(0,255,157,0.15)]">

@@ -166,8 +166,7 @@ class ProposalDetailResponse(ProposalResponse):
 # Approval Submission
 class SignApprovalRequest(BaseModel):
     proposal_id: int
-    signed_psbt: Optional[str] = None # Base64 PSBT containing the signer's partial signature
-    signature_hex: Optional[str] = None
+    signed_psbt: str # Base64 PSBT containing the signer's partial cryptographic signature
     signature_reference: Optional[str] = None
 
 class RejectApprovalRequest(BaseModel):
@@ -205,6 +204,8 @@ class AuditEventResponse(BaseModel):
     reference_id: Optional[str]
     details: Optional[Dict[str, Any]]
     ip_address: Optional[str]
+    prev_hash: Optional[str] = None
+    curr_hash: Optional[str] = None
     created_at: datetime
 
     class Config:

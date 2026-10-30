@@ -1,4 +1,5 @@
 from typing import List, Dict, Any
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -6,9 +7,13 @@ from app.core.security import get_current_user
 from app.models.models import SignerProfile, User
 from app.schemas.schemas import SignerProfileCreate, SignerProfileResponse
 from app.bitcoin.keys import generate_keypair
+from app.services.signer_device_service import signer_device_service
 from app.services.audit_service import audit_service
 
 router = APIRouter(prefix="/signers", tags=["Signers"])
+
+class DeviceSignRequest(BaseModel):
+    psbt_base64: str
 
 @router.get("", response_model=List[SignerProfileResponse])
 def list_signers(db: Session = Depends(get_db)):
@@ -71,3 +76,32 @@ def generate_secp256k1_keypair():
     """Generates a secp256k1 keypair for development, demo, or testing."""
     kp = generate_keypair()
     return kp
+
+@router.post("/{signer_id}/device-sign")
+def sign_with_custodian_device(
+    signer_id: int,
+    req: DeviceSignRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Communicates with the custodian's isolated hardware signing device / HSM.
+    The hardware device signs the PSBT with its private key and returns the signed PSBT.
+    The main treasury coordinator never touches or stores the private key.
+    """
+    profile = db.query(SignerProfile).filter(SignerProfile.id == signer_id).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Signer profile not found")
+
+    # Verify authorization: user must own the signer profile or be an admin
+    if profile.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only trigger signing on your own custodian hardware device.")
+
+    try:
+        sign_result = signer_device_service.sign_psbt_with_device(
+            signer_id=signer_id,
+            psbt_base64=req.psbt_base64
+        )
+        return sign_result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

@@ -110,26 +110,31 @@ Open your browser at [http://localhost:3000](http://localhost:3000).
 
 ## 5. Automated Test Suite
 
-Run unit and integration security tests:
+Run unit, integration, and full multisig lifecycle security tests:
 ```powershell
 cd backend
-.\venv\Scripts\pytest.exe -o pythonpath=. app/tests
+.\venv\Scripts\pytest.exe -o pythonpath=. -v
 ```
 
-**Verified Test Cases:**
-- Password hashing & verification
-- JWT token encoding/decoding
-- Secp256k1 key generation, DER signing, and signature verification
-- Spending policy limit validation (per-tx cap and daily volume quota)
-- Quorum verification and duplicate signature rejection
-- Rejection enforcement ensuring vetoed proposals cannot be approved or broadcast
+**Verified Test Cases (9/9 Passing):**
+1. `test_empty_or_unsigned_psbt_rejected`: Enforces that approvals require authentic cryptographic signatures; empty approvals are strictly rejected.
+2. `test_full_multisig_quorum_lifecycle_and_broadcast`: Demonstrates full 2-of-3 multisig lifecycle: 1 signer cannot spend, 2 independent custodian signers reach threshold, auto-finalize PSBT, and broadcast valid transaction to Bitcoin Regtest.
+3. `test_tampered_psbt_rejected`: Proves that a tampered PSBT (altered output/amount) is immediately rejected and cannot reuse previous approvals.
+4. `test_cryptographic_hash_chained_audit_integrity`: Validates SHA-256 hash chaining across audit log events, proving that tampering with any historical event is detected.
+5. `test_password_hashing`: Verifies robust password hashing using modern cryptographic standards.
+6. `test_jwt_token_creation_and_decoding`: Verifies cryptographic JWT session token claims and expiry.
+7. `test_secp256k1_key_generation_and_signatures`: Verifies pure secp256k1 ECDSA DER signature verification.
+8. `test_spending_policy_enforcement`: Verifies per-transaction caps and 24-hour velocity spending limits.
+9. `test_duplicate_signature_and_rejection_logic`: Verifies duplicate signature rejection and veto enforcement.
 
 ---
 
 ## 6. Security Guarantees & Threat Model
 
-1. **Zero Server Key Knowledge**: Private keys are never stored in PostgreSQL or sent across network boundaries.
-2. **Cryptographic Validation**: Approvals require an authentic ECDSA DER signature cryptographically verified against the registered signer's secp256k1 public key.
-3. **Threshold Guarantees**: A transaction is broadcast only when $\ge M$ valid signatures are collected.
-4. **Spending Policies**: Automatic enforcement of per-transaction caps and 24-hour velocity quotas.
-5. **Immutable Audit Trail**: Append-only log of every corporate proposal, approval, veto, and broadcast.
+1. **Zero Coordinator Key Knowledge**: Private keys are never stored in PostgreSQL or sent across coordinator network boundaries. Signers sign using isolated custodian signing devices.
+2. **Mandatory Cryptographic Validation**: Approvals strictly require an authentic ECDSA DER signature extracted from the signed PSBT matching the registered signer's secp256k1 public key.
+3. **Integer Satoshi Math & Dust Protection**: Eliminates float rounding bugs and rejects outputs below the 546-satoshi dust limit.
+4. **Multi-Tenant Organization Isolation**: Enforces tenant-level scoping across all transaction queries, approvals, and wallet operations.
+5. **Concurrency-Safe Approvals**: Uses row-level database locking (`SELECT ... FOR UPDATE`) to prevent race conditions during concurrent signing.
+6. **Immutable Cryptographic Audit Trail**: Every corporate action is hash-chained via SHA-256 (`prev_hash` $\to$ `curr_hash`), making database tampering mathematically detectable.
+

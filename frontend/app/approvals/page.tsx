@@ -75,26 +75,38 @@ function ApprovalsContent() {
   const currentDemoUser = demoUsers.find(du => du.email === user?.email);
 
   const handleApproveAndSign = async () => {
-    if (!selectedProposal) return;
+    if (!selectedProposal || !selectedProposal.current_psbt) return;
     setIsSigning(true);
     setErrorMessage(null);
     setActionSuccess(null);
 
     try {
+      // 1. Identify active custodian profile for this user session
+      const signersList = await api.getSigners();
+      const mySignerProfile = signersList.find((s: any) => s.user_id === user?.id);
+
+      if (!mySignerProfile) {
+        throw new Error('Your current user account is not assigned an active hardware custodian key for this wallet.');
+      }
+
+      // 2. Request isolated custodian hardware device / HSM to sign the PSBT
+      const deviceSignResult = await api.deviceSignPSBT(mySignerProfile.id, selectedProposal.current_psbt);
+
+      // 3. Submit the cryptographically signed PSBT to the SatoshiGuard approval coordinator
       const res = await api.signProposal(
         selectedProposal.id,
-        selectedProposal.current_psbt,
+        deviceSignResult.signed_psbt,
         undefined,
-        currentDemoUser ? `${currentDemoUser.signer_label} (${currentDemoUser.full_name})` : `Signer Session`
+        currentDemoUser ? `${currentDemoUser.signer_label} (${currentDemoUser.full_name})` : `Custody Key #${mySignerProfile.id}`
       );
 
       if (res.broadcast_info && res.broadcast_info.broadcast) {
         setActionSuccess(
-          `Signing threshold reached (${res.approved_count}/${res.threshold})! Finalized and broadcast to Regtest. TXID: ${res.broadcast_info.txid.slice(0, 18)}...`
+          `Signing threshold reached (${res.approved_count}/${res.threshold})! Finalized and broadcast to Bitcoin Regtest. TXID: ${res.broadcast_info.txid.slice(0, 18)}...`
         );
       } else {
         setActionSuccess(
-          `Signature recorded! Quorum progress: ${res.approved_count}/${res.threshold} signatures collected.`
+          `Cryptographic signature verified and combined! Quorum progress: ${res.approved_count}/${res.threshold} signatures collected.`
         );
       }
 

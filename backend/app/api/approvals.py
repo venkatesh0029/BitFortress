@@ -57,7 +57,6 @@ def sign_proposal(
             proposal_id=req.proposal_id,
             user_id=current_user.id,
             signed_psbt=req.signed_psbt,
-            signature_hex=req.signature_hex,
             signature_reference=req.signature_reference,
             ip_address=ip_addr
         )

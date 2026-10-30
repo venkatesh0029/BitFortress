@@ -13,9 +13,11 @@ from app.models.models import (
     User, Organization, OrganizationMember, MemberRole, SignerProfile,
     TreasuryWallet, TreasurySigner, SpendingPolicy
 )
+import binascii
 from app.core.security import get_password_hash
-from app.bitcoin.keys import generate_keypair
+from app.bitcoin.keys import generate_keypair, hash160
 from app.bitcoin.wallet_service import wallet_service
+from app.services.signer_device_service import signer_device_service
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("satoshiguard.main")
@@ -75,16 +77,23 @@ def seed_initial_demo_data():
             )
             db.add(membership)
 
-        # 4. Generate Keypairs and Signer Profiles for signers
+        # 4. Generate Keypairs and Signer Profiles for signers using isolated custodian devices
         signer_emails = ["signer1@satoshiguard.io", "signer2@satoshiguard.io", "signer3@satoshiguard.io"]
         signer_profiles = []
         for idx, email in enumerate(signer_emails, 1):
-            kp = generate_keypair()
+            try:
+                device_pk = signer_device_service.get_device_public_key(idx)
+                fp = hash160(binascii.unhexlify(device_pk))[:4].hex()
+            except Exception:
+                kp = generate_keypair()
+                device_pk = kp["public_key"]
+                fp = kp["fingerprint"]
+
             sp = SignerProfile(
                 user_id=created_users[email].id,
                 label=f"Hardware Key HSM-{idx:02d}",
-                public_key=kp["public_key"],
-                fingerprint=kp["fingerprint"],
+                public_key=device_pk,
+                fingerprint=fp,
                 derivation_path="m/48'/1'/0'/2'",
                 status="ACTIVE"
             )

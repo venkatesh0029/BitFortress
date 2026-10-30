@@ -19,15 +19,35 @@ class ApprovalService:
         db: Session,
         proposal_id: int,
         user_id: int,
-        signed_psbt: Optional[str] = None,
-        signature_hex: Optional[str] = None,
+        signed_psbt: str,
         signature_reference: Optional[str] = None,
         ip_address: Optional[str] = None
     ) -> Dict[str, Any]:
-        # 1. Fetch proposal
-        proposal = db.query(TransactionProposal).filter(TransactionProposal.id == proposal_id).first()
+        """
+        Cryptographically validates and records a custodian's PSBT signature.
+        Enforces:
+        - Mandatory signed_psbt payload
+        - Row-level database lock (concurrency protection)
+        - Signer authorization check against wallet custodian roster
+        - Duplicate signature rejection
+        - Explicit verification that submitted PSBT contains a valid ECDSA signature matching signer's registered public key
+        - Automatic threshold finalization and Regtest on-chain broadcast upon quorum
+        """
+        # 1. Require signed_psbt
+        if not signed_psbt or not signed_psbt.strip():
+            raise ValueError(
+                "A cryptographically signed PSBT is required to record approval. Unsigned approvals are rejected by security policy."
+            )
+
+        # 2. Fetch proposal with row-level lock to prevent concurrent approval race conditions
+        proposal = (
+            db.query(TransactionProposal)
+            .filter(TransactionProposal.id == proposal_id)
+            .with_for_update()
+            .first()
+        )
         if not proposal:
-            raise ValueError("Transaction proposal not found")
+            raise ValueError(f"Transaction proposal #{proposal_id} not found")
 
         if proposal.status != ProposalStatus.PENDING:
             raise ValueError(f"Cannot approve proposal in '{proposal.status}' state")
@@ -35,78 +55,106 @@ class ApprovalService:
         wallet = proposal.wallet
         psbt_record = proposal.psbt_record
 
-        # 2. Verify signer profile belongs to this user and is assigned to this wallet
-        signer_profile = db.query(SignerProfile).join(
-            TreasurySigner, TreasurySigner.signer_id == SignerProfile.id
-        ).filter(
-            SignerProfile.user_id == user_id,
-            TreasurySigner.wallet_id == wallet.id,
-            SignerProfile.status == "ACTIVE"
-        ).first()
+        # 3. Verify signer profile belongs to this user and is assigned to this wallet
+        signer_profile = (
+            db.query(SignerProfile)
+            .join(TreasurySigner, TreasurySigner.signer_id == SignerProfile.id)
+            .filter(
+                SignerProfile.user_id == user_id,
+                TreasurySigner.wallet_id == wallet.id,
+                SignerProfile.status == "ACTIVE"
+            )
+            .first()
+        )
 
         if not signer_profile:
-            raise ValueError("You are not an authorized signer for this treasury wallet")
+            raise ValueError("You are not an authorized custodian/signer for this treasury wallet")
 
-        # 3. Check for duplicate approval / prior decision
-        existing_approval = db.query(Approval).filter(
-            Approval.proposal_id == proposal_id,
-            Approval.signer_id == signer_profile.id
-        ).first()
+        # 4. Check for duplicate approval / prior decision
+        existing_approval = (
+            db.query(Approval)
+            .filter(
+                Approval.proposal_id == proposal_id,
+                Approval.signer_id == signer_profile.id
+            )
+            .first()
+        )
 
         if existing_approval:
             raise ValueError(
                 f"You have already submitted a decision ({existing_approval.decision}) for this proposal"
             )
 
-        # 4. Verify & Combine PSBT Signature
-        updated_psbt = psbt_record.current_psbt
-        if signed_psbt:
-            combine_result = psbt_service.combine_and_verify_signatures(
-                current_psbt=psbt_record.current_psbt,
-                submitted_signed_psbt=signed_psbt
-            )
-            updated_psbt = combine_result["combined_psbt"]
-            psbt_record.current_psbt = updated_psbt
+        # 5. Cryptographically verify and combine PSBT
+        # Validates that the submitted PSBT contains a partial signature for signer_profile.public_key
+        combine_result = psbt_service.combine_and_verify_signatures(
+            current_psbt=psbt_record.current_psbt,
+            submitted_signed_psbt=signed_psbt.strip(),
+            expected_pubkey_hex=signer_profile.public_key
+        )
+        updated_psbt = combine_result["combined_psbt"]
+        psbt_record.current_psbt = updated_psbt
 
-        # 5. Record Approval
+        # 6. Extract the verified signature hex from the submitted PSBT
+        extracted_sigs = psbt_service.extract_partial_signatures(signed_psbt)
+        matched_sig_hex = None
+        for s in extracted_sigs:
+            if s["pubkey"] == signer_profile.public_key.lower():
+                matched_sig_hex = s["signature"]
+                break
+
+        # 7. Record Approval in Database
         approval = Approval(
             proposal_id=proposal_id,
             signer_id=signer_profile.id,
             decision=ApprovalDecision.APPROVED,
-            signature_reference=signature_reference or f"Signer #{signer_profile.id} ({signer_profile.label})",
-            signature_data=signature_hex or (signed_psbt[:64] + "..." if signed_psbt else "Valid ECDSA Signature")
+            signature_reference=signature_reference or f"{signer_profile.label} (Custody Key #{signer_profile.id})",
+            signature_data=matched_sig_hex or "ECDSA Secp256k1 Signature Verified"
         )
         db.add(approval)
         db.flush()
 
-        # 6. Count approved signatures
-        approved_count = db.query(Approval).filter(
-            Approval.proposal_id == proposal_id,
-            Approval.decision == ApprovalDecision.APPROVED
-        ).count()
+        # 8. Count cryptographic approvals collected so far
+        approved_count = (
+            db.query(Approval)
+            .filter(
+                Approval.proposal_id == proposal_id,
+                Approval.decision == ApprovalDecision.APPROVED
+            )
+            .count()
+        )
 
+        # Record Audit Event with cryptographic hash chain
         audit_service.record_event(
             db=db,
             organization_id=wallet.organization_id,
             actor_id=user_id,
-            event_type="SIGNATURE_SUBMITTED",
+            event_type="CRYPTOGRAPHIC_SIGNATURE_VERIFIED",
             reference_type="PROPOSAL",
             reference_id=str(proposal.id),
             details={
                 "signer_label": signer_profile.label,
                 "signer_public_key": signer_profile.public_key,
+                "signature_hex": (matched_sig_hex[:32] + "...") if matched_sig_hex else "Verified",
                 "approved_count": approved_count,
-                "threshold": wallet.threshold
+                "threshold": wallet.threshold,
+                "psbt_complete": combine_result["analysis"].get("next") == "finalizer"
             },
             ip_address=ip_address
         )
 
         broadcast_info = None
 
-        # 7. Check if Threshold is Reached
-        if approved_count >= wallet.threshold:
-            logger.info(f"Threshold reached ({approved_count}/{wallet.threshold}) for proposal #{proposal.id}. Finalizing and broadcasting...")
-            
+        # 9. Quorum Evaluation: Check if threshold is reached
+        psbt_ready_to_finalize = (
+            combine_result["analysis"].get("next") == "finalizer" or
+            approved_count >= wallet.threshold
+        )
+
+        if psbt_ready_to_finalize:
+            logger.info(
+                f"Quorum reached ({approved_count}/{wallet.threshold}) for proposal #{proposal.id}. Finalizing and broadcasting to Bitcoin network..."
+            )
             try:
                 broadcast_res = psbt_service.finalize_and_broadcast(psbt_record.current_psbt)
                 proposal.status = ProposalStatus.BROADCAST
@@ -141,7 +189,7 @@ class ApprovalService:
                 notification_service.notify_user(
                     db=db,
                     user_id=proposal.proposer_id,
-                    title="Transaction Broadcasted & Confirmed",
+                    title="Transaction Broadcast & Confirmed",
                     message=f"Proposal #{proposal.id} reached threshold ({approved_count}/{wallet.threshold}) and was broadcast to Regtest. TXID: {broadcast_res['txid'][:16]}...",
                     category="SUCCESS"
                 )
@@ -149,16 +197,15 @@ class ApprovalService:
                 broadcast_info = broadcast_res
             except Exception as e:
                 logger.error(f"Error finalizing/broadcasting proposal #{proposal.id}: {e}")
-                # Keep approved state, pending broadcast retry
                 proposal.status = ProposalStatus.APPROVED
                 broadcast_info = {"error": str(e), "broadcast": False}
         else:
-            # Threshold not yet reached
+            # Threshold not yet reached; notify proposer of progress
             notification_service.notify_user(
                 db=db,
                 user_id=proposal.proposer_id,
-                title="Signature Received",
-                message=f"Signer {signer_profile.label} approved proposal #{proposal.id}. Progress: {approved_count}/{wallet.threshold} signatures.",
+                title="Cryptographic Signature Received",
+                message=f"Signer {signer_profile.label} verified and signed proposal #{proposal.id}. Progress: {approved_count}/{wallet.threshold} signatures.",
                 category="INFO"
             )
 
@@ -181,9 +228,18 @@ class ApprovalService:
         reason: str,
         ip_address: Optional[str] = None
     ) -> Dict[str, Any]:
-        proposal = db.query(TransactionProposal).filter(TransactionProposal.id == proposal_id).first()
+        """
+        Records a custodian's formal veto/rejection of a proposal.
+        Uses row-level locking to guarantee finality.
+        """
+        proposal = (
+            db.query(TransactionProposal)
+            .filter(TransactionProposal.id == proposal_id)
+            .with_for_update()
+            .first()
+        )
         if not proposal:
-            raise ValueError("Transaction proposal not found")
+            raise ValueError(f"Transaction proposal #{proposal_id} not found")
 
         if proposal.status != ProposalStatus.PENDING:
             raise ValueError(f"Cannot reject proposal in '{proposal.status}' state")
@@ -191,22 +247,29 @@ class ApprovalService:
         wallet = proposal.wallet
 
         # Verify signer profile
-        signer_profile = db.query(SignerProfile).join(
-            TreasurySigner, TreasurySigner.signer_id == SignerProfile.id
-        ).filter(
-            SignerProfile.user_id == user_id,
-            TreasurySigner.wallet_id == wallet.id,
-            SignerProfile.status == "ACTIVE"
-        ).first()
+        signer_profile = (
+            db.query(SignerProfile)
+            .join(TreasurySigner, TreasurySigner.signer_id == SignerProfile.id)
+            .filter(
+                SignerProfile.user_id == user_id,
+                TreasurySigner.wallet_id == wallet.id,
+                SignerProfile.status == "ACTIVE"
+            )
+            .first()
+        )
 
         if not signer_profile:
             raise ValueError("You are not an authorized signer for this treasury wallet")
 
         # Check existing decision
-        existing_approval = db.query(Approval).filter(
-            Approval.proposal_id == proposal_id,
-            Approval.signer_id == signer_profile.id
-        ).first()
+        existing_approval = (
+            db.query(Approval)
+            .filter(
+                Approval.proposal_id == proposal_id,
+                Approval.signer_id == signer_profile.id
+            )
+            .first()
+        )
 
         if existing_approval:
             raise ValueError(f"You have already submitted a decision ({existing_approval.decision})")
@@ -224,7 +287,7 @@ class ApprovalService:
         proposal.status = ProposalStatus.REJECTED
         db.commit()
 
-        # Audit Event
+        # Audit Event with cryptographic hash chain
         audit_service.record_event(
             db=db,
             organization_id=wallet.organization_id,

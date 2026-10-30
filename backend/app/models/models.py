@@ -192,6 +192,8 @@ class AuditEvent(Base):
     reference_id = Column(String(100), nullable=True)
     details = Column(JSON, nullable=True)
     ip_address = Column(String(45), nullable=True)
+    prev_hash = Column(String(64), nullable=True)
+    curr_hash = Column(String(64), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utc_now)
 
     organization = relationship("Organization", back_populates="audit_events")

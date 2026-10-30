@@ -63,15 +63,20 @@ export default function DashboardPage() {
   const primaryWallet = wallets[0] || null;
   const pendingCount = proposals.filter(p => p.status === 'PENDING').length;
 
-  const chartData = [
-    { day: 'Mon', balance: 10.0, volume: 0.0 },
-    { day: 'Tue', balance: 10.0, volume: 0.15 },
-    { day: 'Wed', balance: 10.0, volume: 0.45 },
-    { day: 'Thu', balance: 10.0, volume: 0.10 },
-    { day: 'Fri', balance: 10.0, volume: 0.0 },
-    { day: 'Sat', balance: 10.0, volume: 0.30 },
-    { day: 'Today', balance: primaryWallet ? primaryWallet.balance_btc : 10.0, volume: 0.05 },
-  ];
+  const currentBtc = primaryWallet ? primaryWallet.balance_btc : 0.0;
+  const broadcastVolumeToday = proposals
+    .filter(p => p.status === 'BROADCAST')
+    .reduce((acc, p) => acc + p.amount_btc, 0);
+
+  const days = ['6d ago', '5d ago', '4d ago', '3d ago', '2d ago', 'Yesterday', 'Today'];
+  const chartData = days.map((label, idx) => {
+    const isToday = idx === 6;
+    return {
+      day: label,
+      balance: currentBtc,
+      volume: isToday ? broadcastVolumeToday : 0.0,
+    };
+  });
 
   return (
     <AppLayout>

@@ -49,7 +49,16 @@ def get_transactions(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    query = db.query(TransactionProposal)
+    mem = db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
+    if not mem:
+        return []
+
+    query = (
+        db.query(TransactionProposal)
+        .join(TreasuryWallet, TreasuryWallet.id == TransactionProposal.wallet_id)
+        .filter(TreasuryWallet.organization_id == mem.organization_id)
+    )
+
     if wallet_id:
         query = query.filter(TransactionProposal.wallet_id == wallet_id)
     if status:
@@ -60,9 +69,13 @@ def get_transactions(
 
 @router.get("/{proposal_id}", response_model=ProposalDetailResponse)
 def get_transaction_detail(proposal_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    mem = db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
     p = db.query(TransactionProposal).filter(TransactionProposal.id == proposal_id).first()
     if not p:
         raise HTTPException(status_code=404, detail="Proposal not found")
+
+    if not mem or p.wallet.organization_id != mem.organization_id:
+        raise HTTPException(status_code=403, detail="Access denied: Proposal belongs to a different organization")
 
     base = serialize_proposal(p, db)
     psbt_rec = p.psbt_record

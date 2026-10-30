@@ -186,6 +186,13 @@ class ApiClient {
     });
   }
 
+  async deviceSignPSBT(signer_id: number, psbt_base64: string): Promise<{ signed_psbt: string; complete: boolean; signer_id: number }> {
+    return this.request<{ signed_psbt: string; complete: boolean; signer_id: number }>(`/signers/${signer_id}/device-sign`, {
+      method: 'POST',
+      body: JSON.stringify({ psbt_base64 }),
+    });
+  }
+
   // Policies
   async getPolicy(): Promise<SpendingPolicy> {
     return this.request<SpendingPolicy>('/policies');
@@ -203,6 +210,10 @@ class ApiClient {
     let url = `/audit?limit=${limit}`;
     if (eventType) url += `&event_type=${encodeURIComponent(eventType)}`;
     return this.request<AuditEvent[]>(url);
+  }
+
+  async verifyAuditTrail(): Promise<{ is_valid: boolean; total_records: number; latest_hash: string; message: string; broken_at_id?: number }> {
+    return this.request<{ is_valid: boolean; total_records: number; latest_hash: string; message: string; broken_at_id?: number }>('/audit/verify');
   }
 
   // Notifications

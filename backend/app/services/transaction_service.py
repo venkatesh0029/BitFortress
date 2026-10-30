@@ -76,6 +76,7 @@ class TransactionService:
         psbt_data = psbt_service.create_multisig_psbt(
             multisig_address=wallet.address,
             redeem_script=wallet.redeem_script or "",
+            descriptor=wallet.descriptor or "",
             destination_address=destination,
             amount_satoshis=amount_satoshis,
             fee_satoshis=fee_satoshis
